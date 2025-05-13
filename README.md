@@ -66,8 +66,7 @@ pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --e
 pip install -r requirements.txt
 
 # install pytorch3d offline
-wget https://anaconda.org/pytorch3d/pytorch3d/0.7.5/do
-wnload/linux-64/pytorch3d-0.7.5-py310_cu116_pyt1121.tar.bz2
+wget https://anaconda.org/pytorch3d/pytorch3d/0.7.5/download/linux-64/pytorch3d-0.7.5-py310_cu116_pyt1121.tar.bz2
 conda install pytorch3d-0.7.5-py310_cu116_pyt1121.tar.bz2
 ```
 
