@@ -45,6 +45,7 @@ config = dict(
     frontend = dict(
         num_tracking_iters = num_tracking_iter,
         num_mapping_iters = num_mapping_iters,
+        converged_th = -1,
         tau_k = 0.01, # The proportion of new observed scene, used for keyframe selection.
         tau_l = h * w * 2.5,  # Maximum number of Gaussians in the local map
         max_frames = localmap_max_frames, # Maximum number of frames in the local map

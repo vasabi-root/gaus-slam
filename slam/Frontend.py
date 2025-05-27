@@ -17,13 +17,7 @@ import copy
 import matplotlib.pyplot as plt
 from queue import Queue
 import time
-import open3d as o3d
-from pytorch3d.ops import iterative_closest_point
 import pytorch3d
-import numpy as np
-import math 
-from open3d_ui import Vis_Render
-import pdb
 
 class Frontend:
     def __init__(self, config, to_backend: Queue, wandb_run) -> None:
@@ -48,10 +42,8 @@ class Frontend:
         self.use_wandb = self.config['use_wandb']
         self.vel_pose_init = self.config['frontend']['vel_pose_init']
         self.enable_retracking = self.config['frontend']['enable_retracking']
+        self.converged_th = config['frontend']['converged_th']
         self.wandb_run = wandb_run
-
-        #self.vis_render = Vis_Render(config, os.path.join(config['vis_base_dir'], "frontend"))
-        self.local_frames_vis = []
 
         self.numpts_rec = []
         self.depth_l1_rec = []
@@ -82,6 +74,9 @@ class Frontend:
     
     def tracking(self, frame: Frame):
 
+        converged_times = 0
+        last_trans = frame.transform._cam_trans.detach().double()
+        
         for iter in range(self.num_tracking_iters):
             tracking_start_time = time.time()
             frame.transform.optimizer.zero_grad(set_to_none=True)
@@ -93,9 +88,24 @@ class Frontend:
             with torch.no_grad():
                 frame.transform.optimizer.step()
                 frame.transform.update_learning_rate()
+                
             tracking_end_time = time.time()
             self.tracking_iter_time_sum += tracking_end_time - tracking_start_time
             self.tracking_iter_time_count += 1
+            
+            # check whether it converges
+            if self.converged_th > 0:
+                cur_trans = frame.transform._cam_trans.detach().double()
+                delta = torch.norm(last_trans - cur_trans).item()
+                last_trans = cur_trans
+                
+                converged = delta < self.converged_th
+                if converged: converged_times += 1 
+                else: converged_times = 0
+                    
+                if converged_times > 3:
+                    break 
+            
         
         last_alpha = render_pkg['render_alpha'].detach()
         last_depth = render_pkg['render_depth'].detach()
@@ -132,7 +142,6 @@ class Frontend:
     def process_frame(self, time_idx, gt_color, gt_depth, gt_pose):
         """
         Main processing pipeline of the Frontend
-        Frontend process one frame at a time
         """
         cur_frame = Frame(self.config, time_idx, gt_color, gt_depth, gt_pose, self.cur_lmid, frame_type=2)
         self.local_frames.append(cur_frame)
@@ -170,40 +179,37 @@ class Frontend:
             cur_frame.start_optimizer(last_frame.get_w2c.detach(), lr_dict)
             self.vel = torch.eye(4).cuda().float()
             print("Tracking failed, reset localmap!!!")
+        else:
+            self.vel = (cur_frame.get_w2c @ torch.linalg.inv(last_frame.get_w2c)).detach()
             
         if not is_refkf: 
-            
-            self.vel = (cur_frame.get_w2c @ torch.linalg.inv(last_frame.get_w2c)).detach()
             render_pkg = Renderer_view(self.config, self.map, w2c=cur_frame.get_w2c.detach())
             alpha_map = render_pkg['render_alpha']
             if ((alpha_map < 0.5).sum() > alpha_map.numel() * self.tau_k):
-                cur_frame.frame_type = 1 # keyframe
-                # self.save_render_pkg(render_pkg, cur_frame.gt_color, cur_frame.gt_depth, cur_frame.time_idx)
                 mapping_start_time = time.time()
-                cur_frame.is_keyframe = True
+                
+                cur_frame.frame_type = 1 # keyframe
                 add_new_gaussians(self.config, self.map, cur_frame, render_pkg=render_pkg)
                 self.mapping()
                 prune_gaussians(self.config, self.map)
+                
                 mapping_end_time = time.time()
                 self.mapping_frame_time_sum += mapping_end_time - mapping_start_time
                 self.mapping_frame_time_count += 1
-            self.local_frames_vis.append(cur_frame)
-        # to generate new keyframes
+       # to generate new keyframes
         if is_refkf:
-            #self.update_vis()
             # send local map to backend
             local_map_params = self.map.extract_params()
             lm = LocalMap(self.config, self.cur_lmid, self.local_frames, local_map_params, tracking_ok=self.tracking_flag)
             self.to_backend.put(copy.deepcopy(lm))
-            self.cur_lmid = self.cur_lmid + 1
             
-            # reset local map
+            # Reset current frame as the reference keyframe for the next local map.
+            self.cur_lmid = self.cur_lmid + 1
             cur_frame = Frame(self.config, time_idx, gt_color, gt_depth, gt_pose, self.cur_lmid, frame_type=0)
             cur_frame.start_optimizer(torch.eye(4, dtype=torch.float32, device='cuda'), lr_dict)
-            cur_frame.transform.iteration_times = self.num_tracking_iters
-            cur_frame.transform.update_learning_rate(step=False)
+
+            # Reset local map
             self.local_frames = [cur_frame]
-            self.local_frames_vis = [cur_frame]
             self.create_map() 
             self.tracking_flag = tracking_flag
 
@@ -234,17 +240,6 @@ class Frontend:
         plt.plot(range(len(self.depth_l1_rec)), self.depth_l1_rec)
         plt.savefig(f"{vis_base_dir}/depth_l1.png")
         plt.close()
-
-    def update_vis(self, ):
-        if self.vis_render.queue.empty():
-            self.vis_render.reset()
-        else:
-            while not self.vis_render.queue.empty(): time.sleep(1)
-
-        for frame in self.local_frames_vis:
-            frame: Frame
-            self.vis_render.update_frame(self.map, frame.get_w2c, frame.frame_type, frame.time_idx)
-
 
 class mp_Frontend(Frontend):
     def __init__(self, config, dataflow: mp.Queue, to_backend: mp.Queue, event, wandb_run):

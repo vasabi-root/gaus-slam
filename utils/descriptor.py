@@ -24,3 +24,11 @@ class GlobalDesc:
         assert parse_shape(images, '_ rgb _ _') == dict(rgb=3)
         assert (images.dtype == torch.float) and (images.max() <= 1.0001), images.max()
         return self.netvlad({'image': images})['global_descriptor'] # B 4096
+
+class MyDesc:
+    
+    globaldesc = GlobalDesc()
+    
+    @torch.no_grad()
+    def __call__(self, images):
+        return self.globaldesc(images)

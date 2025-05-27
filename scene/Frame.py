@@ -1,20 +1,10 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from utils.common_utils import build_rotation, build_quaternion, get_pointcloud
-from utils.common_utils import get_pts_from_depth, get_normal_from_pts
-from pytorch3d.renderer import (
-    look_at_view_transform,
-    OpenGLPerspectiveCameras,
-    PointsRasterizationSettings,
-    PointsRenderer
-)
-from utils.keyframe_selection import keyframe_selection_overlap
-from plyfile import PlyData, PlyElement
+from utils.common_utils import build_rotation, build_quaternion
 import numpy as np
-import os 
 import random
-from utils.descriptor import GlobalDesc
+from utils.descriptor import MyDesc
 import copy 
 
 def get_expon_lr_func(
@@ -241,7 +231,7 @@ class LocalMap:
         num_frames = len(frames) 
         rep_imgs = torch.stack([self.frames[0].gt_color.permute(2, 0, 1),
                                 self.frames[num_frames - 2].gt_color.permute(2, 0, 1)])
-        self.map_desc = GlobalDesc()(rep_imgs)
+        self.map_desc = MyDesc()(rep_imgs)
         self.mapping_times = 0
         
     def start_optimizer(self, initial_transformation: torch.Tensor, lr_dict: dict):

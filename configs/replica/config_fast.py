@@ -13,9 +13,10 @@ h = 340 * 2
 w = 600 * 2
 trans_lr_base = 0.002
 rot_lr_base = 0.0004
-num_tracking_iter = 25
-num_ba_iters = 30
-localmap_max_frames = 30
+num_tracking_iter = 40
+num_mapping_iters = 30
+num_ba_iters = 40
+localmap_max_frames = 80
 
 config = dict(
     vis_base_dir = f'output/{name}_exp{exp}_seed{seed}/{scene_name}',
@@ -39,8 +40,9 @@ config = dict(
     
     frontend = dict(
         num_tracking_iters = num_tracking_iter,
-        num_mapping_iters = localmap_max_frames,
-        tau_k = 0.1, # The proportion of new observed scene, used for keyframe selection.
+        num_mapping_iters = num_mapping_iters,
+        converged_th = 5e-4,
+        tau_k = 0.15, # The proportion of new observed scene, used for keyframe selection.
         tau_l = h * w * 1.5,  # Maximum number of Gaussians in the local map
         max_frames = localmap_max_frames, # Maximum number of frames in the local map
         vel_pose_init  = True, 
@@ -158,9 +160,9 @@ config = dict(
                     [ 0.0,  0.0,  0.0, 1.0 ]]),
     ),
     eval=dict(
-        save_renders = True, 
-        eval_mesh = True, 
-        save_mesh = True, 
+        save_renders = False, 
+        eval_mesh = False, 
+        save_mesh = False, 
         mesh_interval = 5, 
         voxel_size = 0.01,
     ),
