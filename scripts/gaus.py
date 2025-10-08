@@ -24,6 +24,11 @@ from utils.eval import eval_final
 from datasets import get_dataset, load_dataset_config
 from scene import save_scence
 
+os.environ["LIBGL_ALWAYS_INDIRECT"]="0"
+os.environ["MESA_GL_VERSION_OVERRIDE"]="4.5"
+os.environ["MESA_GLSL_VERSION_OVERRIDE"]="450"
+os.environ["LIBGL_ALWAYS_SOFTWARE"]="1"
+
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 
