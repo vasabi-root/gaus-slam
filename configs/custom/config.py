@@ -68,7 +68,7 @@ config = dict(
         sleep_time = 0.1, # Prevent continuous backend operations from degrading frontend efficiency.
         
         mesh_vis = False,
-        render_vis = False,
+        render_vis = True,
         common_vis = True, 
         gs_densify = False,
         random_process = not wo_random_optimization, # random optimization when backend is not busy
