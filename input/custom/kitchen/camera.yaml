@@ -1,0 +1,10 @@
+camera_params:
+  crop_edge: 0
+  cx: 180
+  cy: 320
+  fx: 340.3754036086746
+  fy: 338.1963970958536
+  image_height: 640
+  image_width: 360
+  png_depth_scale: 6553.5
+dataset_name: replica

@@ -1,4 +1,8 @@
 import os
+from pathlib import Path
+
+gaus_slam_dir = Path(__file__).resolve().parents[2]
+dataset_dir = gaus_slam_dir/"input/custom"
 
 scenes = ["workspace", "bathroom", "kitchen"]
 
@@ -105,9 +109,9 @@ config = dict(
     ),
     data=dict(
         dataset_name="Replica",
-        meshdir="/home/bashmac/MIPT/test_SLAM/datasets/custom/cull_replica_mesh",
-        basedir="/home/bashmac/MIPT/test_SLAM/datasets/custom",
-        gradslam_data_cfg="/home/bashmac/MIPT/test_SLAM/datasets/custom/camera.yaml",
+        meshdir=str(dataset_dir/"cull_replica_mesh"),
+        basedir=str(dataset_dir),
+        gradslam_data_cfg=str(dataset_dir/scene_name/"camera.yaml"),
         sequence=scene_name,
         desired_image_height=h,
         desired_image_width=w,
