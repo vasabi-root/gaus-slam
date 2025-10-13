@@ -74,6 +74,13 @@ wget https://anaconda.org/pytorch3d/pytorch3d/0.7.5/download/linux-64/pytorch3d-
 conda install pytorch3d-0.7.5-py310_cu116_pyt1121.tar.bz2
 ```
 
+In WSL add these lines into ~/.bashrc:
+```sh
+export XDG_SESSION_TYPE=x11
+export GDK_BACKEND=x11
+export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
+```
+
 ## 🚀 Usage
 
 Here we will introduce the usage of GauS-SLAM, experiments of the paper and visualization of the results.

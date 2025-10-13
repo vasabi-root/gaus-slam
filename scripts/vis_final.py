@@ -6,11 +6,6 @@ sys.path.insert(0, _BASE_DIR)
 print("System Paths:")
 for p in sys.path:
     print(p)
-    
-os.environ["LIBGL_ALWAYS_INDIRECT"]="0"
-os.environ["MESA_GL_VERSION_OVERRIDE"]="4.5"
-os.environ["MESA_GLSL_VERSION_OVERRIDE"]="450"
-os.environ["LIBGL_ALWAYS_SOFTWARE"]="1"
 
 from scene import Gaussians, Frame
 from render import Renderer_view
