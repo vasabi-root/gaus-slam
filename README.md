@@ -62,7 +62,7 @@ git clone --recursive https://github.com/gaus-slam/gaus-slam.git
 ## 💻 Installation
 Then setup environment from the provided requirements file,
 
-```
+```sh
 conda create -n gaus python=3.10
 conda activate gaus
 conda install -c "nvidia/label/cuda-11.6.0" cuda-toolkit
@@ -70,8 +70,14 @@ pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --e
 pip install -r requirements.txt
 
 # install pytorch3d offline
-wget https://anaconda.org/pytorch3d/pytorch3d/0.7.5/download/linux-64/pytorch3d-0.7.5-py310_cu116_pyt1121.tar.bz2
-conda install pytorch3d-0.7.5-py310_cu116_pyt1121.tar.bz2
+pip install scikit-image matplotlib imageio plotly opencv-python
+pip install black usort flake8 flake8-bugbear flake8-comprehensions
+pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
+```
+
+After pip installs:
+```sh
+sudo apt-get install python3-tk
 ```
 
 In WSL add these lines into ~/.bashrc:
