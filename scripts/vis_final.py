@@ -28,21 +28,25 @@ class Visualization:
         
         self.config = config
         self.viz_scale = config['viz']['view_scale']
-        config['viz']['viz_h'] = 340
-        config['viz']['viz_w'] = 600
-        self.viz_h = int(config['viz']['viz_h'] * self.viz_scale)
-        self.viz_w = int(config['viz']['viz_w'] * self.viz_scale)
-        
-        self.ori_h = config['cameras']['height']
-        self.ori_w = config['cameras']['width']
-        self.intrinsics = np.array(config['cameras']['intrinsics'], dtype=np.float32)[:3, :3] * self.viz_scale
-        
-        self.intrinsics[0, :] *= config['viz']['viz_w'] / self.ori_w
-        self.intrinsics[1, :] *= config['viz']['viz_h'] / self.ori_h
+        config['viz']['viz_h'] = 1552
+        config['viz']['viz_w'] = 2560
+        self.viz_h = int(config['viz']['viz_h'])
+        self.viz_w = int(config['viz']['viz_w'])
+    
+        self.intrinsics = np.array([
+            [self.viz_w/2 * 1.83, 0, self.viz_w/2],
+            [0, self.viz_w/2 * 1.83, self.viz_h/2],
+            [0, 0, 1],
+        ])
+        config['cameras']['intrinsics'] = self.intrinsics
+        config['cameras']['height'] = self.viz_h
+        config['cameras']['width'] = self.viz_w
+
         self.vis = o3d.visualization.Visualizer()
         self.vis.create_window(width   = self.viz_w, 
                                height  = self.viz_h,
                                visible = True)
+        self.camera_loc = np.array(config['viz']['cam_loc'], dtype=np.float32)[:3, :3]
         self.is_created = False
     
     def create_visualization(self, gaussians: Gaussians, first_w2c):
@@ -64,7 +68,7 @@ class Visualization:
             color = render_pkg['render_color'].permute(1, 2, 0)
             depth = render_pkg['render_depth'].permute(1, 2, 0)
             depth = torch.nan_to_num(depth / render_pkg['render_alpha'].permute(1, 2, 0), 0, 0)
-            point_cloud = get_pointcloud(color, depth, self.config['cameras']['intrinsics'], w2c=first_w2c)
+            point_cloud = get_pointcloud(color, depth, self.intrinsics, w2c=first_w2c)
         self.pcd.points = o3d.utility.Vector3dVector(point_cloud.points.contiguous().double().cpu().numpy())
         self.pcd.colors = o3d.utility.Vector3dVector(point_cloud.colors.contiguous().double().cpu().numpy())
         self.vis.add_geometry(self.pcd)
@@ -100,7 +104,7 @@ class Visualization:
             
             depth = torch.nan_to_num(depth / render_pkg['render_alpha'].permute(1, 2, 0), 0, 0)
             
-            point_cloud = get_pointcloud(color, depth, self.config['cameras']['intrinsics'], w2c=w2c)
+            point_cloud = get_pointcloud(color, depth, self.intrinsics, w2c=w2c)
             
             if point_cloud.points.shape[0] > 0:
                 self.pcd.points = o3d.utility.Vector3dVector(point_cloud.points.contiguous().double().cpu().numpy())
@@ -133,11 +137,14 @@ if __name__ == "__main__":
     vis = Visualization(config)
     vis.create_visualization(gaussians, w2cs[0])
     
+    
     total_time = 0
     cnt = 0
-    while True:
-        time.sleep(0.1)
-        total_time += vis.update(gaussians)
-        cnt = cnt + 1
-        if cnt % 100 == 0:
-            print("fps:", 1 / (total_time / cnt))
+    try:
+        while True:
+            total_time += vis.update(gaussians)
+            cnt = cnt + 1
+            if cnt % 100 == 0:
+                print("fps:", 1 / (total_time / cnt))
+    except Exception:
+        pass
